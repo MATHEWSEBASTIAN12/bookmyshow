@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Movie Booking Pro</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>🎬 Movie Booking</h1>
+
+<div id="auth">
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="signup()">Sign Up</button>
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="app" class="hidden">
+
+  <button onclick="logout()">Logout</button>
+
+  <h2>Now Showing</h2>
+  <div id="movies"></div>
+
+  <h2 id="selectedMovie"></h2>
+  <div id="shows"></div>
+
+  <div id="seats"></div>
+
+  <h3>Total: ₹<span id="total">0</span></h3>
+  <button onclick="proceedPayment()">Proceed to Pay</button>
+
+  <div id="ticket"></div>
+
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

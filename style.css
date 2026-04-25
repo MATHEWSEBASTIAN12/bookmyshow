@@ -1,0 +1,44 @@
+body {
+  background: #0d0d0d;
+  color: white;
+  font-family: Arial;
+  text-align: center;
+}
+
+.hidden { display: none; }
+
+#movies, #shows {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.movie, .show {
+  background: #1c1c1c;
+  margin: 10px;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.movie img {
+  width: 160px;
+}
+
+#seats {
+  display: grid;
+  grid-template-columns: repeat(10, 35px);
+  gap: 8px;
+  justify-content: center;
+  margin: 20px;
+}
+
+.seat {
+  width: 35px;
+  height: 35px;
+  background: gray;
+}
+
+.selected { background: green; }
+.locked { background: orange; }
+.booked { background: red; }

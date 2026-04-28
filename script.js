@@ -1,143 +1,129 @@
-import { auth, db } from "./firebase.js";
-
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-import {
-  collection,
-  getDocs,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-let currentUser;
-let selectedSeats = [];
-let total = 0;
-let currentShowId = "";
-
-// AUTH
-window.signup = async () => {
-  await createUserWithEmailAndPassword(auth, email.value, password.value);
-};
-
-window.login = async () => {
-  await signInWithEmailAndPassword(auth, email.value, password.value);
-};
-
-window.logout = () => signOut(auth);
-
-onAuthStateChanged(auth, user => {
-  if (user) {
-    currentUser = user;
-    authDiv.classList.add("hidden");
-    app.classList.remove("hidden");
-    loadMovies();
-  } else {
-    authDiv.classList.remove("hidden");
-    app.classList.add("hidden");
+const movies = [
+  {
+    name: "Leo",
+    img: "https://image.tmdb.org/t/p/w500/8bZ7Q7xHkZlNw9QXK3iW5pXk6s.jpg"
+  },
+  {
+    name: "KGF Chapter 2",
+    img: "https://image.tmdb.org/t/p/w500/9ZedQHPQVveaIYmDSTazhT3y273.jpg"
   }
+];
+
+const cinemas = [
+  {
+    name: "PVR Lulu Mall Kochi",
+    img: "https://images.unsplash.com/photo-1581905764498-8c63f6c7a8c2"
+  },
+  {
+    name: "Cinepolis Centre Square Kochi",
+    img: "https://images.unsplash.com/photo-1505685296765-3a2736de412f"
+  },
+  {
+    name: "Carnival Cinemas Trivandrum",
+    img: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba"
+  }
+];
+
+const timings = ["10:00 AM", "2:00 PM", "6:00 PM"];
+
+let selectedMovie = "";
+let selectedCinema = "";
+let selectedTime = "";
+let total = 0;
+let selectedSeats = [];
+
+const moviesDiv = document.getElementById("movies");
+const cinemasDiv = document.getElementById("cinemas");
+const showsDiv = document.getElementById("shows");
+
+movies.forEach(m => {
+  const div = document.createElement("div");
+  div.className = "card";
+  div.innerHTML = `<img src="${m.img}"><p>${m.name}</p>`;
+  div.onclick = () => selectCinema(m);
+  moviesDiv.appendChild(div);
 });
 
-// LOAD MOVIES FROM DB
-async function loadMovies() {
-  const snapshot = await getDocs(collection(db, "movies"));
-  movies.innerHTML = "";
+function selectCinema(movie) {
+  selectedMovie = movie.name;
 
-  snapshot.forEach(docSnap => {
-    const m = docSnap.data();
+  cinemaTitle.classList.remove("hidden");
+  cinemasDiv.innerHTML = "";
+
+  cinemas.forEach(c => {
     const div = document.createElement("div");
-    div.className = "movie";
-    div.innerHTML = `<img src="${m.img}"><p>${m.name}</p>`;
-    div.onclick = () => loadShows(docSnap.id);
-    movies.appendChild(div);
+    div.className = "card";
+    div.innerHTML = `<img src="${c.img}"><p>${c.name}</p>`;
+    div.onclick = () => selectShow(c);
+    cinemasDiv.appendChild(div);
   });
 }
 
-// LOAD SHOWS
-async function loadShows(movieId) {
-  selectedMovie.innerText = "Select Show";
+function selectShow(cinema) {
+  selectedCinema = cinema.name;
 
-  const snapshot = await getDocs(collection(db, "shows"));
-  shows.innerHTML = "";
+  showTitle.classList.remove("hidden");
+  showsDiv.innerHTML = "";
 
-  snapshot.forEach(docSnap => {
-    const s = docSnap.data();
-    if (s.movieId === movieId) {
-      const div = document.createElement("div");
-      div.className = "show";
-      div.innerText = s.time;
-      div.onclick = () => loadSeats(docSnap.id);
-      shows.appendChild(div);
-    }
+  timings.forEach(t => {
+    const btn = document.createElement("button");
+    btn.innerText = t;
+    btn.onclick = () => selectSeats(t);
+    showsDiv.appendChild(btn);
   });
 }
 
-// SEATS WITH LOCKING
-async function loadSeats(showId) {
-  currentShowId = showId;
-  const seatRef = doc(db, "seats", showId);
-  let data = (await getDoc(seatRef)).data();
+function selectSeats(time) {
+  selectedTime = time;
 
-  if (!data) {
-    data = { seats: Array(100).fill("available") };
-    await setDoc(seatRef, data);
-  }
+  seatSection.classList.remove("hidden");
+  const seatDiv = document.getElementById("seats");
 
-  seats.innerHTML = "";
+  seatDiv.innerHTML = "";
   total = 0;
   selectedSeats = [];
 
-  data.seats.forEach((status, i) => {
+  for (let i = 0; i < 40; i++) {
     const s = document.createElement("div");
-    s.className = "seat " + status;
+    s.className = "seat";
 
-    s.onclick = async () => {
-      if (status === "available") {
-        data.seats[i] = "locked";
-        await updateDoc(seatRef, data);
-
-        s.classList.add("selected");
+    s.onclick = () => {
+      s.classList.toggle("selected");
+      if (s.classList.contains("selected")) {
         total += 150;
         selectedSeats.push(i);
-        document.getElementById("total").innerText = total;
-
-        // Auto release after 2 minutes
-        setTimeout(async () => {
-          data.seats[i] = "available";
-          await updateDoc(seatRef, data);
-        }, 120000);
+      } else {
+        total -= 150;
+        selectedSeats = selectedSeats.filter(x => x !== i);
       }
+      document.getElementById("total").innerText = total;
     };
 
-    seats.appendChild(s);
-  });
+    seatDiv.appendChild(s);
+  }
 }
 
-// PAYMENT + BOOKING
-window.proceedPayment = async () => {
-  if (selectedSeats.length === 0) return alert("Select seats");
+function checkout() {
+  if (selectedSeats.length === 0) {
+    alert("Select seats first");
+    return;
+  }
 
-  const seatRef = doc(db, "seats", currentShowId);
-  const data = (await getDoc(seatRef)).data();
+  document.getElementById("checkout").classList.remove("hidden");
 
-  selectedSeats.forEach(i => data.seats[i] = "booked");
-  await updateDoc(seatRef, data);
+  document.getElementById("summary").innerText =
+    `Movie: ${selectedMovie}
+Cinema: ${selectedCinema}
+Time: ${selectedTime}
+Seats: ${selectedSeats.join(", ")}
+Total: ₹${total}`;
+}
 
-  generateTicket();
-};
-
-// TICKET WITH QR
-function generateTicket() {
-  ticket.innerHTML = `
+function confirmBooking() {
+  document.getElementById("result").innerHTML = `
     <h2>🎟️ Booking Confirmed</h2>
+    <p>${selectedMovie} - ${selectedCinema}</p>
+    <p>${selectedTime}</p>
     <p>Seats: ${selectedSeats.join(", ")}</p>
-    <p>Total: ₹${total}</p>
-    <img src="https://api.qrserver.com/v1/create-qr-code/?data=${selectedSeats}">
   `;
 }
